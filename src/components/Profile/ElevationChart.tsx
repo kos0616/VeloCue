@@ -85,7 +85,7 @@ export default function ElevationChart() {
 
       chartData.push({
         distance: totalDist, // keep in meters for precision
-        displayDist: (totalDist / 1000).toFixed(2),
+        displayDist: (totalDist / 1000).toFixed(1),
         elevation: (ele || 0).toFixed(),
         gradient: gradient,
       });
