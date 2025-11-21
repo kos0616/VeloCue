@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { useRouteStore } from "@/store/routeStore";
 import { nanoid } from "nanoid";
+import { CategoricalChartFunc } from "recharts/types/chart/types";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
@@ -40,18 +41,15 @@ export default function ElevationChart() {
   const addUserNote = useRouteStore((state) => state.addUserNote);
   const userNotes = useRouteStore((state) => state.userNotes);
 
-  const handleChartClick = (e: any) => {
-    if (e && e.activePayload && e.activePayload.length > 0) {
-      const payload = e.activePayload[0].payload;
-      const distance = payload.distance;
-      // const elevation = payload.elevation;
-
+  const handleChartClick: CategoricalChartFunc = (e) => {
+    if (e && e.activeLabel) {
+      const distance = e.activeLabel;
       // Simple prompt for now (replace with modal later)
-      const text = prompt(`Add note at ${payload.displayDist}km?`);
+      const text = prompt(`Add note at ${distance}km?`);
       if (text) {
         addUserNote({
           id: nanoid(),
-          distance: distance,
+          distance: parseFloat(distance),
           text: text,
           type: "other",
         });
