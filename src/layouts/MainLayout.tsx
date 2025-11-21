@@ -9,11 +9,21 @@ export default function MainLayout() {
           <span className="text-xs text-slate-500">Cycle Notes Generator</span>
         </div>
         <nav className="flex gap-4">
-          <a href="/" className="text-sm font-medium text-slate-600 hover:text-indigo-600">Home</a>
-          <a href="/editor" className="text-sm font-medium text-slate-600 hover:text-indigo-600">Editor</a>
+          <a
+            href="/"
+            className="text-sm font-medium text-slate-600 hover:text-indigo-600"
+          >
+            Home
+          </a>
+          <a
+            href="/editor"
+            className="text-sm font-medium text-slate-600 hover:text-indigo-600"
+          >
+            Editor
+          </a>
         </nav>
       </header>
-      <main className="flex-1 overflow-hidden relative">
+      <main className="relative flex-1 overflow-hidden">
         <Outlet />
       </main>
     </div>

@@ -118,8 +118,8 @@ export default function ElevationChart() {
     );
 
   return (
-    <div className="h-full w-full bg-white p-4 rounded-lg shadow-sm border border-slate-200 mt-4">
-      <h3 className="text-sm font-bold text-slate-700 mb-2">
+    <div className="mt-4 h-full w-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <h3 className="mb-2 text-sm font-bold text-slate-700">
         Elevation Profile
       </h3>
       <ResponsiveContainer width="100%" height="100%">
@@ -167,12 +167,15 @@ export default function ElevationChart() {
           {userNotes.map((note) => {
             // Find the closest data point to get elevation
             // This assumes data is sorted by distance, which it is.
-            const closestPoint = data.reduce((prev, curr) => {
-              return Math.abs(curr.distance - note.distance) <
-                Math.abs(prev.distance - note.distance)
-                ? curr
-                : prev;
-            }, data[0] || { elevation: 0 });
+            const closestPoint = data.reduce(
+              (prev, curr) => {
+                return Math.abs(curr.distance - note.distance) <
+                  Math.abs(prev.distance - note.distance)
+                  ? curr
+                  : prev;
+              },
+              data[0] || { elevation: 0 },
+            );
 
             return (
               <ReferenceDot

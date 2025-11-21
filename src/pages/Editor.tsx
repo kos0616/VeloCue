@@ -21,8 +21,8 @@ export default function Editor() {
   return (
     <div className="flex h-full flex-col lg:flex-row">
       {/* Sidebar / Control Panel */}
-      <div className="w-full lg:w-[300px] lg:shrink-0 bg-white border-r border-slate-200 p-4 overflow-y-auto z-10 relative">
-        <h2 className="text-lg font-bold mb-4">Route Editor</h2>
+      <div className="relative z-10 w-full overflow-y-auto border-r border-slate-200 bg-white p-4 lg:w-[300px] lg:shrink-0">
+        <h2 className="mb-4 text-lg font-bold">Route Editor</h2>
         <GpxUploader />
 
         {gpxData && (
@@ -37,11 +37,11 @@ export default function Editor() {
         )}
 
         <div className="mt-8">
-          <p className="text-slate-500 text-sm">
+          <p className="text-sm text-slate-500">
             Upload a GPX file to see the route and elevation profile.
           </p>
           {gpxData && (
-            <p className="text-xs text-green-600 mt-2">
+            <p className="mt-2 text-xs text-green-600">
               GPX Loaded: {gpxData.features?.[0]?.geometry?.coordinates?.length}{" "}
               points
             </p>
@@ -50,11 +50,11 @@ export default function Editor() {
       </div>
 
       {/* Map Area */}
-      <div className="flex-1 relative flex flex-col">
-        <div className="flex-1 relative">
+      <div className="relative flex flex-1 flex-col">
+        <div className="relative flex-1">
           <RouteMap />
         </div>
-        <div className="h-1/2 bg-slate-50 p-2 border-t border-slate-200 z-10 overflow-y-auto flex flex-col gap-4">
+        <div className="z-10 flex h-1/2 flex-col gap-4 overflow-y-auto border-t border-slate-200 bg-slate-50 p-2">
           <div className="h-64 shrink-0">
             <ElevationChart />
           </div>
