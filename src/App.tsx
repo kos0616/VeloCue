@@ -5,7 +5,7 @@ import Editor from "@/pages/Editor";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
