@@ -3,7 +3,7 @@ import GpxUploader from "@/components/Map/GpxUploader";
 import ElevationChart from "@/components/Profile/ElevationChart";
 import { useRouteStore } from "@/store/routeStore";
 import { detectSteepSections } from "@/utils/routeUtils";
-// import PrintStrip from "@/components/Export/PrintStrip";
+import PrintStrip from "@/components/Export/PrintStrip";
 
 export default function Editor() {
   const gpxData = useRouteStore((state) => state.gpxData);
@@ -58,7 +58,7 @@ export default function Editor() {
           <div className="h-64 shrink-0">
             <ElevationChart />
           </div>
-          {/* <PrintStrip /> */}
+          <PrintStrip />
         </div>
       </div>
     </div>

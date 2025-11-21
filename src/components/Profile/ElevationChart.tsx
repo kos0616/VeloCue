@@ -42,18 +42,16 @@ export default function ElevationChart() {
   const userNotes = useRouteStore((state) => state.userNotes);
 
   const handleChartClick: CategoricalChartFunc = (e) => {
-    if (e && e.activeLabel) {
-      const distance = e.activeLabel;
-      // Simple prompt for now (replace with modal later)
-      const text = prompt(`Add note at ${distance}km?`);
-      if (text) {
-        addUserNote({
-          id: nanoid(),
-          distance: parseFloat(distance),
-          text: text,
-          type: "other",
-        });
-      }
+    if (e && e.activeLabel !== undefined && e.activeCoordinate) {
+      const distance = Number(e.activeLabel);
+      console.log("Clicked distance:", distance);
+
+      addUserNote({
+        id: nanoid(),
+        distance,
+        text: "",
+        type: "other",
+      });
     }
   };
 
@@ -131,9 +129,20 @@ export default function ElevationChart() {
           onClick={handleChartClick}
         >
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="displayDist" unit="km" minTickGap={50} />
+          <XAxis
+            dataKey="distance"
+            unit="km"
+            minTickGap={50}
+            tickFormatter={(value) => (value / 1000).toFixed(1)}
+            type="number"
+            domain={["dataMin", "dataMax"]}
+          />
           <YAxis unit="m" domain={["dataMin - 10", "dataMax + 10"]} />
-          <Tooltip />
+          <Tooltip
+            labelFormatter={(value: number) => {
+              return (value / 1000).toFixed(2) + "km";
+            }}
+          />
           <defs>
             <linearGradient id="gradeGradient" x1="0" y1="0" x2="1" y2="0">
               {gradientStops.map((stop, index) => (
@@ -155,19 +164,28 @@ export default function ElevationChart() {
             strokeWidth={2}
             activeDot={{ r: 6 }}
           />
-          {userNotes.map((note) => (
-            <ReferenceDot
-              key={note.id}
-              x={(note.distance / 1000).toFixed(2)}
-              y={
-                data.find((d) => Math.abs(d.distance - note.distance) < 50)
-                  ?.elevation
-              }
-              r={5}
-              fill="red"
-              stroke="white"
-            />
-          ))}
+          {userNotes.map((note) => {
+            // Find the closest data point to get elevation
+            // This assumes data is sorted by distance, which it is.
+            const closestPoint = data.reduce((prev, curr) => {
+              return Math.abs(curr.distance - note.distance) <
+                Math.abs(prev.distance - note.distance)
+                ? curr
+                : prev;
+            }, data[0] || { elevation: 0 });
+
+            return (
+              <ReferenceDot
+                key={note.id}
+                x={note.distance}
+                y={closestPoint ? Number(closestPoint.elevation) : 0}
+                r={5}
+                fill="red"
+                stroke="white"
+                ifOverflow="extendDomain"
+              />
+            );
+          })}
         </AreaChart>
       </ResponsiveContainer>
     </div>

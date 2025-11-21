@@ -1,10 +1,10 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 export interface UserNote {
   id: string;
   distance: number; // distance in meters
   text: string;
-  type: 'climb' | 'food' | 'sprint' | 'other';
+  type: "climb" | "food" | "sprint" | "other";
 }
 
 interface RouteState {
@@ -23,6 +23,8 @@ export const useRouteStore = create<RouteState>((set) => ({
   mapCenter: [23.5, 121], // Default center (Taiwan)
   setMapCenter: (center) => set({ mapCenter: center }),
   userNotes: [],
-  addUserNote: (note) => set((state) => ({ userNotes: [...state.userNotes, note] })),
-  removeUserNote: (id) => set((state) => ({ userNotes: state.userNotes.filter((n) => n.id !== id) })),
+  addUserNote: (note) =>
+    set((state) => ({ userNotes: [...state.userNotes, note] })),
+  removeUserNote: (id) =>
+    set((state) => ({ userNotes: state.userNotes.filter((n) => n.id !== id) })),
 }));
