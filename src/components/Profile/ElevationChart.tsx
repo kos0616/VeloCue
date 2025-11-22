@@ -12,6 +12,7 @@ import {
 import { useRouteStore } from "@/store/routeStore";
 import { nanoid } from "nanoid";
 import { CategoricalChartFunc } from "recharts/types/chart/types";
+import CreateDialog from "../CreateDialog";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
@@ -45,7 +46,7 @@ export default function ElevationChart() {
     if (e && e.activeLabel !== undefined && e.activeCoordinate) {
       const distance = Number(e.activeLabel);
       console.log("Clicked distance:", distance);
-
+      // TODO: open dialog to add note, then save note
       addUserNote({
         id: nanoid(),
         distance,
@@ -119,6 +120,7 @@ export default function ElevationChart() {
 
   return (
     <div className="mt-4 h-full w-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <CreateDialog></CreateDialog>
       <h3 className="mb-2 text-sm font-bold text-slate-700">
         Elevation Profile
       </h3>

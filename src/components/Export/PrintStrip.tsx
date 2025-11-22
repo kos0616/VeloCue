@@ -2,6 +2,7 @@ import { useRouteStore } from "@/store/routeStore";
 import { analyzeRoute } from "@/utils/routeUtils";
 import { useMemo, useRef } from "react";
 import html2canvas from "html2canvas-pro";
+import EditDialog from "@/components/EditDialog/index";
 
 export default function PrintStrip() {
   const gpxData = useRouteStore((state) => state.gpxData);
@@ -48,6 +49,10 @@ export default function PrintStrip() {
     return pointsWithNotes.sort((a, b) => a.distance - b.distance);
   }, [gpxData, userNotes]);
 
+  const handleTableRowClicked = (id: string) => {
+    // TODO: open EditDialog with the note id
+  };
+
   const handleExport = async () => {
     if (!stripRef.current) return;
     const canvas = await html2canvas(stripRef.current);
@@ -61,6 +66,7 @@ export default function PrintStrip() {
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <EditDialog></EditDialog>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-bold">預覽</h3>
         <button
@@ -110,6 +116,7 @@ export default function PrintStrip() {
 
               return (
                 <tr
+                  onClick={() => handleTableRowClicked(note?.id || "")}
                   key={i}
                   className={`text-xs ${bgColor} ${textColor} cursor-pointer border-b border-gray-600 hover:brightness-90`}
                   role="button"
