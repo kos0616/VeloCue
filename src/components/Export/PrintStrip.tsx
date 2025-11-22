@@ -1,6 +1,6 @@
 import { useRouteStore } from "@/store/routeStore";
 import { analyzeRoute } from "@/utils/routeUtils";
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import html2canvas from "html2canvas-pro";
 import EditDialog from "@/components/EditDialog/index";
 
@@ -8,6 +8,7 @@ export default function PrintStrip() {
   const gpxData = useRouteStore((state) => state.gpxData);
   const userNotes = useRouteStore((state) => state.userNotes);
   const stripRef = useRef<HTMLTableElement>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
   const segments = useMemo(() => {
     if (!gpxData) return [];
@@ -50,7 +51,9 @@ export default function PrintStrip() {
   }, [gpxData, userNotes]);
 
   const handleTableRowClicked = (id: string) => {
-    // TODO: open EditDialog with the note id
+    if (id) {
+      setEditingNoteId(id);
+    }
   };
 
   const handleExport = async () => {
@@ -66,7 +69,12 @@ export default function PrintStrip() {
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <EditDialog></EditDialog>
+      {editingNoteId && (
+        <EditDialog
+          noteId={editingNoteId}
+          onClose={() => setEditingNoteId(null)}
+        />
+      )}
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-bold">預覽</h3>
         <button

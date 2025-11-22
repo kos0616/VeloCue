@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -10,7 +10,6 @@ import {
   ReferenceDot,
 } from "recharts";
 import { useRouteStore } from "@/store/routeStore";
-import { nanoid } from "nanoid";
 import { CategoricalChartFunc } from "recharts/types/chart/types";
 import CreateDialog from "../CreateDialog";
 
@@ -39,20 +38,16 @@ function getGradientColor(gradient: number) {
 
 export default function ElevationChart() {
   const gpxData = useRouteStore((state) => state.gpxData);
-  const addUserNote = useRouteStore((state) => state.addUserNote);
   const userNotes = useRouteStore((state) => state.userNotes);
+  const [creatingNoteDistance, setCreatingNoteDistance] = useState<
+    number | null
+  >(null);
 
   const handleChartClick: CategoricalChartFunc = (e) => {
     if (e && e.activeLabel !== undefined && e.activeCoordinate) {
       const distance = Number(e.activeLabel);
       console.log("Clicked distance:", distance);
-      // TODO: open dialog to add note, then save note
-      addUserNote({
-        id: nanoid(),
-        distance,
-        text: "",
-        type: "other",
-      });
+      setCreatingNoteDistance(distance);
     }
   };
 
@@ -120,7 +115,12 @@ export default function ElevationChart() {
 
   return (
     <div className="mt-4 h-full w-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <CreateDialog></CreateDialog>
+      {creatingNoteDistance !== null && (
+        <CreateDialog
+          distance={creatingNoteDistance}
+          onClose={() => setCreatingNoteDistance(null)}
+        />
+      )}
       <h3 className="mb-2 text-sm font-bold text-slate-700">
         Elevation Profile
       </h3>

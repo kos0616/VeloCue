@@ -14,6 +14,7 @@ interface RouteState {
   setMapCenter: (center: [number, number]) => void;
   userNotes: UserNote[];
   addUserNote: (note: UserNote) => void;
+  updateUserNote: (note: UserNote) => void;
   removeUserNote: (id: string) => void;
 }
 
@@ -25,6 +26,10 @@ export const useRouteStore = create<RouteState>((set) => ({
   userNotes: [],
   addUserNote: (note) =>
     set((state) => ({ userNotes: [...state.userNotes, note] })),
+  updateUserNote: (note) =>
+    set((state) => ({
+      userNotes: state.userNotes.map((n) => (n.id === note.id ? note : n)),
+    })),
   removeUserNote: (id) =>
     set((state) => ({ userNotes: state.userNotes.filter((n) => n.id !== id) })),
 }));
