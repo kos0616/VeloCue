@@ -10,6 +10,7 @@ import {
 } from "react-leaflet";
 import L, { LeafletMouseEvent } from "leaflet";
 import { useRouteStore } from "@/store/routeStore";
+import { nanoid } from "nanoid";
 import {
   findClosestPointIndexByLatLng,
   findClosestPointIndexByDistance,
@@ -31,14 +32,18 @@ export default function RouteMap() {
   const gpxData = useRouteStore((state) => state.gpxData);
   const routePoints = useRouteStore((state) => state.routePoints);
   const userNotes = useRouteStore((state) => state.userNotes);
+  const addUserNote = useRouteStore((state) => state.addUserNote);
   const hoveredPointIndex = useRouteStore((state) => state.hoveredPointIndex);
   const setHoveredPointIndex = useRouteStore((state) => state.setHoveredPointIndex);
 
-  const coordinates =
-    (gpxData?.features?.[0]?.geometry?.coordinates?.map((coord: number[]) => [
-      coord[1],
-      coord[0],
-    ]) as [number, number][]) || [];
+  const coordinates = useMemo(
+    () =>
+      (gpxData?.features?.[0]?.geometry?.coordinates?.map((coord: number[]) => [
+        coord[1],
+        coord[0],
+      ]) as [number, number][]) || [],
+    [gpxData],
+  );
 
   const startPoint = coordinates[0] || null;
 
@@ -83,6 +88,26 @@ export default function RouteMap() {
     }
   };
 
+  const handleRouteClick = (e: LeafletMouseEvent) => {
+    if (!routePoints.length) return;
+
+    const closestIndex = findClosestPointIndexByLatLng(
+      routePoints,
+      e.latlng.lat,
+      e.latlng.lng,
+    );
+
+    const point = routePoints[closestIndex];
+    if (!point) return;
+
+    addUserNote({
+      id: nanoid(),
+      distance: point.distance,
+      gradeText: `${Math.round(point.gradient)}%`,
+      text: "",
+    });
+  };
+
   return (
     <div className="h-full w-full z-0">
       <MapContainer
@@ -100,8 +125,16 @@ export default function RouteMap() {
               positions={coordinates}
               color="#1d4ed8"
               weight={5}
+              interactive={false}
+            />
+            <Polyline
+              positions={coordinates}
+              color="#1d4ed8"
+              weight={20}
+              opacity={0}
               eventHandlers={{
                 mousemove: handleRouteHover,
+                click: handleRouteClick,
                 mouseout: () => setHoveredPointIndex(null),
               }}
             />
@@ -119,6 +152,7 @@ export default function RouteMap() {
               <CircleMarker
                 center={hoveredLatLng}
                 radius={7}
+                interactive={false}
                 pathOptions={{ color: "#0f766e", fillColor: "#14b8a6", fillOpacity: 0.9 }}
               />
             )}

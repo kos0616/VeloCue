@@ -22,6 +22,21 @@ function getGradientColor(gradient: number) {
   return "#16a34a"; // Green
 }
 
+function smoothGradient(points: { gradient: number }[], index: number, radius = 2) {
+  const start = Math.max(0, index - radius);
+  const end = Math.min(points.length - 1, index + radius);
+
+  let sum = 0;
+  let count = 0;
+
+  for (let i = start; i <= end; i++) {
+    sum += points[i].gradient;
+    count += 1;
+  }
+
+  return count > 0 ? sum / count : points[index].gradient;
+}
+
 export default function ElevationChart() {
   const routePoints = useRouteStore((state) => state.routePoints);
   const userNotes = useRouteStore((state) => state.userNotes);
@@ -64,12 +79,40 @@ export default function ElevationChart() {
     }));
 
     const totalDist = routePoints[routePoints.length - 1].distance || 1;
-    const stops = chartData.map((point) => {
-      const offset = (point.distance / totalDist) * 100;
-      return {
-        offset: `${offset}%`,
-        color: getGradientColor(point.gradient),
-      };
+    type Segment = { startDistance: number; endDistance: number; color: string };
+    const segments: Segment[] = [];
+
+    for (let i = 0; i < chartData.length; i++) {
+      const current = chartData[i];
+      const next = chartData[i + 1] ?? current;
+      const smoothed = smoothGradient(chartData, i);
+      const color = getGradientColor(smoothed);
+      const startDistance = current.distance;
+      const endDistance = next.distance;
+
+      const last = segments[segments.length - 1];
+      if (last && last.color === color) {
+        last.endDistance = endDistance;
+      } else {
+        segments.push({ startDistance, endDistance, color });
+      }
+    }
+
+    const stops = segments.flatMap((segment, index) => {
+      const startOffset = (segment.startDistance / totalDist) * 100;
+      const endOffset = (segment.endDistance / totalDist) * 100;
+
+      if (index === 0) {
+        return [
+          { offset: `${startOffset}%`, color: segment.color },
+          { offset: `${endOffset}%`, color: segment.color },
+        ];
+      }
+
+      return [
+        { offset: `${startOffset}%`, color: segment.color },
+        { offset: `${endOffset}%`, color: segment.color },
+      ];
     });
 
     return { data: chartData, gradientStops: stops };
