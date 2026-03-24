@@ -25,7 +25,6 @@ export default function Editor() {
 
     const climbs = detectClimbsByScore(points, 1500);
     const autoNotes = climbs.map((climb) => {
-      const distKm = Math.round(climb.startDistance / 1000);
       const gradient = Math.round(climb.avgGradient);
       const lengthMeters = Math.round(climb.lengthMeters);
 
@@ -33,7 +32,7 @@ export default function Editor() {
         id: nanoid(),
         distance: climb.startDistance,
         gradeText: `${gradient}%`,
-        text: `${distKm}k ${gradient}% ${lengthMeters}m`,
+          text: `${lengthMeters}m`,
       };
     });
 

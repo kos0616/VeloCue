@@ -41,13 +41,9 @@ export default function PrintStrip() {
   }, [gpxData, routePoints, userNotes]);
 
   const handleAddEmptyRow = () => {
-    const lastDistance = userNotes.length
-      ? Math.max(...userNotes.map((n) => n.distance))
-      : 0;
-
     addUserNote({
       id: nanoid(),
-      distance: lastDistance,
+      distance: 0,
       gradeText: "0%",
       text: "",
     });
@@ -106,46 +102,43 @@ export default function PrintStrip() {
         {/* The Strip Container */}
         <table
           ref={stripRef}
-          className="mb-5 w-full table-auto border border-gray-300 text-sm"
+          className="mb-5 w-full table-fixed border border-collapse border-gray-300 text-sm"
         >
           <tbody>
-            {rows.map((row, i) => {
+            {rows.map((row) => {
               return (
-                <tr
-                  key={row.id}
-                  className={`border-b border-gray-300 ${i % 2 === 0 ? "bg-gray-200" : "bg-white"}`}
-                >
-                  <td className="px-2 py-1">
+                <tr key={row.id} className="border-b border-gray-300">
+                  <td className="border border-gray-300 p-0">
                     <input
                       type="number"
                       min="0"
                       step="0.1"
                       value={row.displayDistanceKm}
                       onChange={(e) => handleDistanceChange(row.id, e.target.value)}
-                      className="w-20 rounded border border-transparent bg-transparent px-1 py-0.5 text-right outline-none focus:border-slate-400"
+                      className="w-full bg-white px-2 py-2 text-right outline-none"
                     />
                   </td>
-                  <td className="px-2 py-1">
+                  <td className="border border-gray-300 p-0">
                     <input
                       type="text"
                       value={row.gradeText}
                       onChange={(e) => handleGradeChange(row.id, e.target.value)}
-                      className="w-20 rounded border border-transparent bg-transparent px-1 py-0.5 outline-none focus:border-slate-400"
+                      className="w-full bg-white px-2 py-2 outline-none"
                     />
                   </td>
-                  <td className="px-2 py-1">
+                  <td className="border border-gray-300 p-0">
                     <input
                       type="text"
                       value={row.text}
                       onChange={(e) => handleTextChange(row.id, e.target.value)}
-                      className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 outline-none focus:border-slate-400"
+                      className="w-full bg-white px-2 py-2 outline-none"
                     />
                   </td>
-                  <td className="px-2 py-1 text-right">
+                  <td className="border border-gray-300 p-0 text-right">
                     <button
                       type="button"
                       onClick={() => handleDeleteRow(row.id)}
-                      className="rounded border border-red-300 px-2 py-0.5 text-xs text-red-700 hover:bg-red-100"
+                      className="w-full px-2 py-2 text-xs text-red-700 hover:bg-red-100"
                     >
                       刪除
                     </button>
@@ -154,11 +147,11 @@ export default function PrintStrip() {
               );
             })}
             <tr>
-              <td colSpan={4} className="bg-white px-2 py-2">
+              <td colSpan={4} className="border border-gray-300 p-0">
                 <button
                   type="button"
                   onClick={handleAddEmptyRow}
-                  className="w-full rounded border border-dashed border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+                  className="w-full border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
                 >
                   新增
                 </button>
