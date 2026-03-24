@@ -37,6 +37,32 @@ function smoothGradient(points: { gradient: number }[], index: number, radius = 
   return count > 0 ? sum / count : points[index].gradient;
 }
 
+function DistanceOnlyTooltip({
+  active,
+  label,
+  payload,
+}: {
+  active?: boolean;
+  label?: string | number;
+  payload?: Array<{ payload?: { gradient?: number } }>;
+}) {
+  if (!active || label === undefined) return null;
+
+  const distance = Number(label);
+  if (!Number.isFinite(distance)) return null;
+  const gradient = payload?.[0]?.payload?.gradient;
+  const gradientText =
+    typeof gradient === "number" && Number.isFinite(gradient)
+      ? `${Math.round(gradient)}%`
+      : "-";
+
+  return (
+    <div className="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 shadow-sm">
+      {(distance / 1000).toFixed(2)}km | {gradientText}
+    </div>
+  );
+}
+
 export default function ElevationChart() {
   const routePoints = useRouteStore((state) => state.routePoints);
   const userNotes = useRouteStore((state) => state.userNotes);
@@ -148,11 +174,7 @@ export default function ElevationChart() {
             domain={["dataMin", "dataMax"]}
           />
           <YAxis unit="m" domain={["dataMin - 10", "dataMax + 10"]} />
-          <Tooltip
-            labelFormatter={(value: number) => {
-              return (value / 1000).toFixed(2) + "km";
-            }}
-          />
+          <Tooltip content={<DistanceOnlyTooltip />} />
           <defs>
             <linearGradient id="gradeGradient" x1="0" y1="0" x2="1" y2="0">
               {gradientStops.map((stop, index) => (

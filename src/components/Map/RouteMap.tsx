@@ -54,6 +54,13 @@ export default function RouteMap() {
     return [p.lat, p.lon] as [number, number];
   }, [hoveredPointIndex, routePoints]);
 
+  const hoveredDistanceLabel = useMemo(() => {
+    if (hoveredPointIndex === null || hoveredPointIndex < 0) return null;
+    const p = routePoints[hoveredPointIndex];
+    if (!p) return null;
+    return `${(p.distance / 1000).toFixed(2)}km | ${Math.round(p.gradient)}%`;
+  }, [hoveredPointIndex, routePoints]);
+
   const noteMarkerPositions = useMemo(() => {
     return userNotes
       .map((note) => {
@@ -154,7 +161,13 @@ export default function RouteMap() {
                 radius={7}
                 interactive={false}
                 pathOptions={{ color: "#0f766e", fillColor: "#14b8a6", fillOpacity: 0.9 }}
-              />
+              >
+                {hoveredDistanceLabel && (
+                  <Tooltip direction="top" offset={[0, -8]} permanent>
+                    {hoveredDistanceLabel}
+                  </Tooltip>
+                )}
+              </CircleMarker>
             )}
 
             {noteMarkerPositions.map((m) => (
