@@ -35,8 +35,8 @@ export default function CreateDialog({ distance, onClose }: CreateDialogProps) {
     addUserNote({
       id: nanoid(),
       distance: displayDist * 1000, // Use the edited distance
+      gradeText: "0%",
       text: text,
-      type: "other",
     });
     handleClose();
   };

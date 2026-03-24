@@ -1,27 +1,50 @@
+import { useEffect } from "react";
 import RouteMap from "@/components/Map/RouteMap";
 import GpxUploader from "@/components/Map/GpxUploader";
 import ElevationChart from "@/components/Profile/ElevationChart";
 import { useRouteStore } from "@/store/routeStore";
-// import { detectSteepSections } from "@/utils/routeUtils";
+import { analyzeRoute, detectClimbsByScore } from "@/utils/routeUtils";
 import PrintStrip from "@/components/Export/PrintStrip";
+import { nanoid } from "nanoid";
 
 export default function Editor() {
   const gpxData = useRouteStore((state) => state.gpxData);
-  // const addUserNote = useRouteStore((state) => state.addUserNote);
+  const setRoutePoints = useRouteStore((state) => state.setRoutePoints);
+  const clearUserNotes = useRouteStore((state) => state.clearUserNotes);
+  const addUserNotes = useRouteStore((state) => state.addUserNotes);
 
-  console.log("Editor Render, gpxData:", gpxData);
+  useEffect(() => {
+    if (!gpxData) {
+      setRoutePoints([]);
+      clearUserNotes();
+      return;
+    }
 
-  // const handleAutoTag = () => {
-  //   if (!gpxData) return;
-  //   const notes = detectSteepSections(gpxData, 8); // > 8%
-  //   notes.forEach((note) => addUserNote(note));
-  //   alert(`Added ${notes.length} climb markers!`);
-  // };
+    const points = analyzeRoute(gpxData);
+    setRoutePoints(points);
+
+    const climbs = detectClimbsByScore(points, 1500);
+    const autoNotes = climbs.map((climb) => {
+      const distKm = Math.round(climb.startDistance / 1000);
+      const gradient = Math.round(climb.avgGradient);
+      const lengthMeters = Math.round(climb.lengthMeters);
+
+      return {
+        id: nanoid(),
+        distance: climb.startDistance,
+        gradeText: `${gradient}%`,
+        text: `${distKm}k ${gradient}% ${lengthMeters}m`,
+      };
+    });
+
+    clearUserNotes();
+    addUserNotes(autoNotes);
+  }, [gpxData, setRoutePoints, clearUserNotes, addUserNotes]);
 
   return (
     <div className="flex h-full flex-1 flex-col lg:flex-row">
       {/* Sidebar / Control Panel */}
-      <div className="relative z-10 w-full overflow-y-auto border-r border-slate-200 bg-white p-4 lg:w-[300px] lg:shrink-0">
+      <div className="relative z-10 w-full overflow-y-auto border-r border-slate-200 bg-white p-4 lg:w-[500px] lg:shrink-0">
         <h2 className="mb-4 text-lg font-bold">Route Editor</h2>
 
         {!gpxData && <GpxUploader />}
@@ -30,16 +53,6 @@ export default function Editor() {
             Upload a GPX file to see the route and elevation profile.
           </p>
         )}
-        {/* {gpxData && (
-          <div className="mt-4">
-            <button
-              onClick={handleAutoTag}
-              className="w-full rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600"
-            >
-              Auto-Detect Climbs (&gt;8%)
-            </button>
-          </div>
-        )} */}
 
         <div className="mb-2">
           {gpxData && (

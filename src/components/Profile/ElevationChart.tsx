@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   AreaChart,
   Area,
@@ -10,91 +10,60 @@ import {
   ReferenceDot,
 } from "recharts";
 import { useRouteStore } from "@/store/routeStore";
+import { nanoid } from "nanoid";
 import { CategoricalChartFunc } from "recharts/types/chart/types";
-import CreateDialog from "../CreateDialog";
-
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371e3;
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c;
-}
+import { findClosestPointIndexByDistance } from "@/utils/routeUtils";
 
 function getGradientColor(gradient: number) {
-  if (gradient >= 15) return "#a855f7"; // Purple
-  if (gradient >= 10) return "#ef4444"; // Red
-  if (gradient >= 7) return "#f97316"; // Orange
+  if (gradient > 12) return "#7f1d1d"; // Deep red
+  if (gradient >= 9) return "#dc2626"; // Red
+  if (gradient >= 6) return "#f97316"; // Orange
   if (gradient >= 3) return "#eab308"; // Yellow
-  return "#10b981"; // Green
+  return "#16a34a"; // Green
 }
 
 export default function ElevationChart() {
-  const gpxData = useRouteStore((state) => state.gpxData);
+  const routePoints = useRouteStore((state) => state.routePoints);
   const userNotes = useRouteStore((state) => state.userNotes);
-  const [creatingNoteDistance, setCreatingNoteDistance] = useState<
-    number | null
-  >(null);
+  const addUserNote = useRouteStore((state) => state.addUserNote);
+  const hoveredPointIndex = useRouteStore((state) => state.hoveredPointIndex);
+  const setHoveredPointIndex = useRouteStore((state) => state.setHoveredPointIndex);
 
   const handleChartClick: CategoricalChartFunc = (e) => {
-    if (e && e.activeLabel !== undefined && e.activeCoordinate) {
+    if (e && e.activeLabel !== undefined) {
       const distance = Number(e.activeLabel);
-      console.log("Clicked distance:", distance);
-      setCreatingNoteDistance(distance);
+      const pointIndex = findClosestPointIndexByDistance(routePoints, distance);
+      const point = routePoints[pointIndex];
+      if (!point) return;
+
+      addUserNote({
+        id: nanoid(),
+        distance: point.distance,
+        gradeText: `${Math.round(point.gradient)}%`,
+        text: "",
+      });
+    }
+  };
+
+  const handleMouseMove: CategoricalChartFunc = (e) => {
+    if (!e || e.activeLabel === undefined) return;
+    const distance = Number(e.activeLabel);
+    const pointIndex = findClosestPointIndexByDistance(routePoints, distance);
+    if (pointIndex >= 0) {
+      setHoveredPointIndex(pointIndex);
     }
   };
 
   const { data, gradientStops } = useMemo(() => {
-    if (!gpxData) return { data: [], gradientStops: [] };
+    if (!routePoints.length) return { data: [], gradientStops: [] };
 
-    const coords = gpxData.features[0].geometry.coordinates;
-    let totalDist = 0;
-    const chartData = [];
+    const chartData = routePoints.map((p) => ({
+      distance: p.distance,
+      elevation: Number(p.elevation.toFixed(0)),
+      gradient: p.gradient,
+    }));
 
-    // First pass: calculate total distance and data points
-    for (let i = 0; i < coords.length; i++) {
-      const [lon, lat, ele] = coords[i];
-      let dist = 0;
-
-      if (i > 0) {
-        const [prevLon, prevLat] = coords[i - 1];
-        dist = getDistance(prevLat, prevLon, lat, lon);
-        totalDist += dist;
-      }
-
-      let gradient = 0;
-      if (i > 0 && dist > 0) {
-        const prevEle = coords[i - 1][2];
-        gradient = ((ele - prevEle) / dist) * 100;
-      }
-
-      chartData.push({
-        distance: totalDist, // keep in meters for precision
-        displayDist: (totalDist / 1000).toFixed(1),
-        elevation: (ele || 0).toFixed(),
-        gradient: gradient,
-      });
-    }
-
-    const maxEle = Math.max(...chartData.map((d) => d.elevation));
-    const minEle = Math.min(...chartData.map((d) => d.elevation));
-    console.log("Chart Data Stats:", {
-      totalPoints: chartData.length,
-      totalDist: totalDist,
-      maxEle,
-      minEle,
-      firstPoint: chartData[0],
-      lastPoint: chartData[chartData.length - 1],
-    });
-
-    // Second pass: generate gradient stops
+    const totalDist = routePoints[routePoints.length - 1].distance || 1;
     const stops = chartData.map((point) => {
       const offset = (point.distance / totalDist) * 100;
       return {
@@ -104,9 +73,9 @@ export default function ElevationChart() {
     });
 
     return { data: chartData, gradientStops: stops };
-  }, [gpxData]);
+  }, [routePoints]);
 
-  if (!gpxData)
+  if (!routePoints.length)
     return (
       <div className="p-4 text-center text-slate-500">
         Upload a GPX file to view elevation profile
@@ -115,12 +84,6 @@ export default function ElevationChart() {
 
   return (
     <div className="mt-4 h-full w-full rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      {creatingNoteDistance !== null && (
-        <CreateDialog
-          distance={creatingNoteDistance}
-          onClose={() => setCreatingNoteDistance(null)}
-        />
-      )}
       <h3 className="mb-2 text-sm font-bold text-slate-700">
         Elevation Profile
       </h3>
@@ -129,6 +92,8 @@ export default function ElevationChart() {
           data={data}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
           onClick={handleChartClick}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => setHoveredPointIndex(null)}
         >
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
@@ -167,17 +132,11 @@ export default function ElevationChart() {
             activeDot={{ r: 6 }}
           />
           {userNotes.map((note) => {
-            // Find the closest data point to get elevation
-            // This assumes data is sorted by distance, which it is.
-            const closestPoint = data.reduce(
-              (prev, curr) => {
-                return Math.abs(curr.distance - note.distance) <
-                  Math.abs(prev.distance - note.distance)
-                  ? curr
-                  : prev;
-              },
-              data[0] || { elevation: 0 },
+            const pointIndex = findClosestPointIndexByDistance(
+              routePoints,
+              note.distance,
             );
+            const closestPoint = routePoints[pointIndex];
 
             return (
               <ReferenceDot
@@ -191,6 +150,17 @@ export default function ElevationChart() {
               />
             );
           })}
+
+          {hoveredPointIndex !== null && routePoints[hoveredPointIndex] && (
+            <ReferenceDot
+              x={routePoints[hoveredPointIndex].distance}
+              y={routePoints[hoveredPointIndex].elevation}
+              r={6}
+              fill="#0f766e"
+              stroke="white"
+              ifOverflow="extendDomain"
+            />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </div>

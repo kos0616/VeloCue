@@ -1,35 +1,58 @@
-import { UserNote } from "@/store/routeStore";
-import { nanoid } from "nanoid";
+export interface RoutePoint {
+  index: number;
+  lat: number;
+  lon: number;
+  elevation: number;
+  distance: number; // meters from route start
+  gradient: number; // %
+}
 
-export function analyzeRoute(
-  gpxData: any,
-): { distance: number; elevation: number; gradient: number }[] {
-  if (!gpxData) return [];
+export interface DetectedClimb {
+  startDistance: number;
+  avgGradient: number;
+  lengthMeters: number;
+  score: number;
+}
+
+export function analyzeRoute(gpxData: any): RoutePoint[] {
+  if (!gpxData?.features?.[0]?.geometry?.coordinates) return [];
+
   const coords = gpxData.features[0].geometry.coordinates;
   let totalDist = 0;
-  const points = [];
+  const points: RoutePoint[] = [];
 
   for (let i = 0; i < coords.length; i++) {
-    const [lon, lat, ele] = coords[i];
-    let dist = 0;
+    const [lon, lat, rawEle] = coords[i] as [number, number, number];
+    const ele = Number.isFinite(rawEle) ? rawEle : 0;
+
+    let segmentDist = 0;
     let gradient = 0;
 
     if (i > 0) {
-      const [prevLon, prevLat, prevEle] = coords[i - 1];
-      dist = getDistance(prevLat, prevLon, lat, lon);
-      totalDist += dist;
+      const [prevLon, prevLat, prevRawEle] = coords[i - 1] as [
+        number,
+        number,
+        number,
+      ];
+      const prevEle = Number.isFinite(prevRawEle) ? prevRawEle : 0;
+      segmentDist = getDistance(prevLat, prevLon, lat, lon);
+      totalDist += segmentDist;
 
-      if (dist > 0) {
-        gradient = ((ele - prevEle) / dist) * 100;
+      if (segmentDist > 0) {
+        gradient = ((ele - prevEle) / segmentDist) * 100;
       }
     }
 
     points.push({
-      distance: totalDist,
+      index: i,
+      lat,
+      lon,
       elevation: ele,
-      gradient: gradient,
+      distance: totalDist,
+      gradient,
     });
   }
+
   return points;
 }
 
@@ -48,110 +71,98 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * c;
 }
 
-export function detectSteepSections(gpxData: any, threshold = 10): UserNote[] {
-  const points = analyzeRoute(gpxData);
-  const notes: UserNote[] = [];
-  let inSteepSection = false;
-  let maxGradientInCurrentSection = 0;
-  let sectionStartDist = 0;
+export function detectClimbsByScore(
+  points: RoutePoint[],
+  scoreThreshold = 1500,
+): DetectedClimb[] {
+  if (!points.length) return [];
+
+  const climbs: DetectedClimb[] = [];
+  let start = -1;
+
+  const closeAndPush = (end: number) => {
+    if (start < 0 || end <= start) return;
+
+    const startPoint = points[start];
+    const endPoint = points[end];
+    const lengthMeters = endPoint.distance - startPoint.distance;
+    if (lengthMeters < 500) return;
+
+    const segment = points.slice(start, end + 1);
+    const avgGradient =
+      segment.reduce((sum, p) => sum + Math.max(0, p.gradient), 0) /
+      segment.length;
+
+    if (avgGradient < 3) return;
+
+    const score = lengthMeters * avgGradient;
+    if (score < scoreThreshold) return;
+
+    climbs.push({
+      startDistance: startPoint.distance,
+      avgGradient,
+      lengthMeters,
+      score,
+    });
+  };
 
   for (let i = 0; i < points.length; i++) {
-    const p = points[i];
-    if (p.gradient >= threshold) {
-      if (!inSteepSection) {
-        inSteepSection = true;
-        sectionStartDist = p.distance;
-        maxGradientInCurrentSection = p.gradient;
-      } else {
-        maxGradientInCurrentSection = Math.max(
-          maxGradientInCurrentSection,
-          p.gradient,
-        );
-      }
-    } else {
-      if (inSteepSection) {
-        // End of steep section
-        // Only add if section is long enough (e.g., > 50m) to avoid noise
-        if (p.distance - sectionStartDist > 50) {
-          notes.push({
-            id: nanoid(),
-            distance: sectionStartDist,
-            text: `Steep! Max ${maxGradientInCurrentSection.toFixed(1)}%`,
-            type: "climb",
-          });
-        }
-        inSteepSection = false;
-      }
+    const isClimbing = points[i].gradient >= 3;
+
+    if (isClimbing && start === -1) {
+      start = i;
+      continue;
+    }
+
+    if (!isClimbing && start !== -1) {
+      closeAndPush(i - 1);
+      start = -1;
     }
   }
-  return notes;
+
+  if (start !== -1) {
+    closeAndPush(points.length - 1);
+  }
+
+  return climbs;
 }
 
-export function detectClimbsForStrip(
-  gpxData: any,
-): { distance: number; gradient: number; isStart: boolean }[] {
-  const points = analyzeRoute(gpxData);
-  const result: { distance: number; gradient: number; isStart: boolean }[] = [];
+export function findClosestPointIndexByDistance(
+  points: RoutePoint[],
+  targetDistance: number,
+): number {
+  if (!points.length) return -1;
+  let bestIndex = 0;
+  let bestDiff = Math.abs(points[0].distance - targetDistance);
 
-  let climbStartDist = -1;
-  let climbStartGradient = 0;
-  let lastMarkedGradient = 0;
-  let currentClimbDuration = 0; // distance in meters
-
-  // Smoothing: use moving average for gradient to avoid noise
-  const smoothedPoints = points.map((p, i) => {
-    const window = points.slice(
-      Math.max(0, i - 2),
-      Math.min(points.length, i + 3),
-    );
-    const avgGrad =
-      window.reduce((sum, wp) => sum + wp.gradient, 0) / window.length;
-    return { ...p, gradient: avgGrad };
-  });
-
-  for (let i = 0; i < smoothedPoints.length; i++) {
-    const p = smoothedPoints[i];
-
-    // Start of a climb (gradient > 2%)
-    if (p.gradient > 2) {
-      if (climbStartDist === -1) {
-        climbStartDist = p.distance;
-        climbStartGradient = p.gradient;
-        lastMarkedGradient = p.gradient;
-        currentClimbDuration = 0;
-      } else {
-        currentClimbDuration = p.distance - climbStartDist;
-
-        // If climb is long enough (> 400m), mark the start if not already marked
-        if (currentClimbDuration > 400) {
-          const startPointAlreadyMarked = result.some(
-            (r) => Math.abs(r.distance - climbStartDist) < 100,
-          );
-          if (!startPointAlreadyMarked) {
-            result.push({
-              distance: climbStartDist,
-              gradient: climbStartGradient,
-              isStart: true,
-            });
-          }
-
-          // Check for significant gradient increase (+3%)
-          if (p.gradient >= lastMarkedGradient + 3) {
-            result.push({
-              distance: p.distance,
-              gradient: p.gradient,
-              isStart: false,
-            });
-            lastMarkedGradient = p.gradient;
-          }
-        }
-      }
-    } else {
-      // End of climb
-      climbStartDist = -1;
-      currentClimbDuration = 0;
+  for (let i = 1; i < points.length; i++) {
+    const diff = Math.abs(points[i].distance - targetDistance);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestIndex = i;
     }
   }
 
-  return result.sort((a, b) => a.distance - b.distance);
+  return bestIndex;
+}
+
+export function findClosestPointIndexByLatLng(
+  points: RoutePoint[],
+  lat: number,
+  lon: number,
+): number {
+  if (!points.length) return -1;
+
+  let bestIndex = 0;
+  let bestDist = Number.POSITIVE_INFINITY;
+
+  for (let i = 0; i < points.length; i++) {
+    const d = getDistance(lat, lon, points[i].lat, points[i].lon);
+    if (d < bestDist) {
+      bestDist = d;
+      bestIndex = i;
+    }
+  }
+
+  return bestIndex;
 }
