@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kos0616.github.io/VeloCue/sitemap.xml
