@@ -19,7 +19,7 @@ export default function Editor() {
   // };
 
   return (
-    <div className="flex h-full flex-col lg:flex-row">
+    <div className="flex h-full flex-1 flex-col lg:flex-row">
       {/* Sidebar / Control Panel */}
       <div className="relative z-10 w-full overflow-y-auto border-r border-slate-200 bg-white p-4 lg:w-[300px] lg:shrink-0">
         <h2 className="mb-4 text-lg font-bold">Route Editor</h2>
