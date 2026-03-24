@@ -1,10 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  color: #2f261f;
+  color: #302821;
   background:
-    radial-gradient(circle at top, rgba(251, 191, 36, 0.14), transparent 32%),
-    linear-gradient(180deg, #fffdf8 0%, #fcf7ef 48%, #fffdf9 100%);
+    radial-gradient(circle at top left, rgba(24, 105, 132, 0.1), transparent 24%),
+    radial-gradient(circle at top right, rgba(192, 147, 68, 0.11), transparent 24%),
+    linear-gradient(180deg, #faf6ef 0%, #f5f0e6 50%, #f8f3e9 100%);
   font-family:
     "Noto Sans TC", "PingFang TC", "Hiragino Sans CNS", "Microsoft JhengHei",
     system-ui, sans-serif;
@@ -12,7 +13,7 @@
 
 html {
   scroll-behavior: smooth;
-  background: #fffdf8;
+  background: #faf6ef;
 }
 
 body {
@@ -43,4 +44,51 @@ select {
   font-family:
     ui-rounded, "Noto Sans TC", "PingFang TC", "Hiragino Sans CNS",
     "Microsoft JhengHei", system-ui, sans-serif;
+}
+
+.terrain-page {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at top left, rgba(24, 105, 132, 0.11), transparent 22%),
+    radial-gradient(circle at top right, rgba(190, 137, 47, 0.08), transparent 25%),
+    radial-gradient(circle at 70% 18%, rgba(127, 150, 98, 0.11), transparent 20%),
+    linear-gradient(180deg, #fbf7f0 0%, #f4ede2 45%, #f8f3e8 100%);
+}
+
+.terrain-page::before,
+.terrain-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.terrain-page::before {
+  background-image:
+    linear-gradient(rgba(24, 105, 132, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 105, 132, 0.07) 1px, transparent 1px);
+  background-size: 92px 92px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent 86%);
+}
+
+.terrain-page::after {
+  background:
+    radial-gradient(circle at 20% 16%, rgba(126, 164, 69, 0.1), transparent 14%),
+    repeating-radial-gradient(
+      circle at 20% 24%,
+      rgba(30, 95, 124, 0.06) 0,
+      rgba(30, 95, 124, 0.06) 1px,
+      transparent 1px,
+      transparent 22px
+    ),
+    repeating-radial-gradient(
+      circle at 82% 30%,
+      rgba(121, 112, 59, 0.05) 0,
+      rgba(121, 112, 59, 0.05) 1px,
+      transparent 1px,
+      transparent 24px
+    );
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 92%);
 }
