@@ -1,11 +1,10 @@
-import { clsx } from "clsx";
-import { ChevronRight } from "lucide-react";
-import { Link, NavLink, useLocation } from "react-router";
+import { ChevronRight, ChevronLeft } from "lucide-react";
+import { Link, useLocation } from "react-router";
 
 const marketingLinks = [
-  { label: "ABOUT", href: "#product" },
-  { label: "使用情境", href: "#scenarios" },
-  { label: "使用步驟", href: "#method" },
+  { label: "Why", href: "#WHY" },
+  { label: "When", href: "#WHEN" },
+  { label: "How", href: "#HOW" },
 ];
 
 export default function Navbar() {
@@ -23,58 +22,46 @@ export default function Navbar() {
             <span className="font-display text-lg font-black tracking-tight text-stone-900">
               VELOCUE
             </span>
-            <span className="text-[11px] text-stone-500">
-              市民競賽前的策略筆記
-            </span>
+            <span className="text-[12px] text-stone-500">Note Before Race</span>
           </div>
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
-          {isHome &&
-            marketingLinks.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="text-sm font-medium text-stone-600 transition-colors hover:text-stone-900"
-              >
-                {item.label}
-              </a>
-            ))}
-
-          {!isHome && (
+          {isHome ? (
             <>
-              <NavLink
-                to="/"
-                className={({ isActive }) =>
-                  clsx(
-                    "text-sm font-medium transition-colors",
-                    isActive
-                      ? "text-stone-900"
-                      : "text-stone-600 hover:text-stone-900",
-                  )
-                }
+              {marketingLinks.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="text-sm font-medium text-stone-600 transition-colors hover:text-stone-900"
+                >
+                  {item.label}
+                </a>
+              ))}
+              <Link
+                to="/editor"
+                className="group inline-flex items-center gap-2 rounded-full border-2 border-gray-800 bg-green-700 px-4 py-2 text-sm font-semibold text-white"
               >
-                首頁
-              </NavLink>
-              <span className="text-sm text-stone-300">/</span>
-              <span className="text-sm font-medium text-stone-900">
-                編輯器
-              </span>
+                START
+                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/"
+                className="group inline-flex items-center font-medium text-nowrap text-stone-600 transition-colors hover:text-stone-900"
+              >
+                <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                BACK
+              </Link>
             </>
           )}
-
-          <Link
-            to="/editor"
-            className="inline-flex items-center gap-2 rounded-full border-2 border-[#17130f] bg-[#d93b33] px-4 py-2 text-sm font-semibold text-[#fff7f1] transition-transform hover:-translate-y-0.5"
-          >
-            打開編輯器
-            <ChevronRight className="h-4 w-4" />
-          </Link>
         </div>
 
         <Link
           to="/editor"
-          className="inline-flex items-center rounded-full border-2 border-[#17130f] bg-[#d93b33] px-3 py-2 text-sm font-semibold text-[#fff7f1] md:hidden"
+          className="inline-flex items-center rounded-full border-2 border-gray-800 bg-red-500 px-3 py-2 text-sm font-semibold text-white md:hidden"
         >
           編輯器
         </Link>
