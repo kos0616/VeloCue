@@ -14,6 +14,59 @@ export interface DetectedClimb {
   score: number;
 }
 
+function calculateGradientWindow(
+  points: RoutePoint[],
+  windowMeters = 80,
+): RoutePoint[] {
+  return points.map((p, i) => {
+    let j = i;
+
+    while (
+      j < points.length &&
+      points[j].distance - p.distance < windowMeters
+    ) {
+      j++;
+    }
+
+    if (j >= points.length) {
+      return { ...p, gradient: 0 };
+    }
+
+    const end = points[j];
+
+    const elevationDiff = end.elevation - p.elevation;
+    const distanceDiff = end.distance - p.distance;
+
+    const gradient =
+      distanceDiff > 0 ? (elevationDiff / distanceDiff) * 100 : 0;
+
+    return {
+      ...p,
+      gradient,
+    };
+  });
+}
+
+function smoothElevation(points: RoutePoint[], radius = 3): RoutePoint[] {
+  return points.map((p, i) => {
+    const start = Math.max(0, i - radius);
+    const end = Math.min(points.length - 1, i + radius);
+
+    let sum = 0;
+    let count = 0;
+
+    for (let j = start; j <= end; j++) {
+      sum += points[j].elevation;
+      count++;
+    }
+
+    return {
+      ...p,
+      elevation: sum / count,
+    };
+  });
+}
+
 export function analyzeRoute(gpxData: any): RoutePoint[] {
   if (!gpxData?.features?.[0]?.geometry?.coordinates) return [];
 
@@ -53,7 +106,8 @@ export function analyzeRoute(gpxData: any): RoutePoint[] {
     });
   }
 
-  return points;
+  const smoothed = smoothElevation(points, 3);
+  return calculateGradientWindow(smoothed, 80);
 }
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
