@@ -32,7 +32,7 @@ export default function Editor() {
         id: nanoid(),
         distance: climb.startDistance,
         gradeText: `${gradient}%`,
-          text: `${lengthMeters}m`,
+        text: `${lengthMeters}m`,
       };
     });
 
