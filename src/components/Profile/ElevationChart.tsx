@@ -22,31 +22,6 @@ function getGradientColor(gradient: number) {
   return "#16a34a"; // Green
 }
 
-function smoothPositiveGradient(
-  points: { gradient: number }[],
-  index: number,
-  radius = 2,
-) {
-  if (points[index].gradient <= 0) {
-    return 0;
-  }
-
-  const start = Math.max(0, index - radius);
-  const end = Math.min(points.length - 1, index + radius);
-
-  let sum = 0;
-  let count = 0;
-
-  for (let i = start; i <= end; i++) {
-    if (points[i].gradient > 0) {
-      sum += points[i].gradient;
-      count += 1;
-    }
-  }
-
-  return count > 0 ? sum / count : points[index].gradient;
-}
-
 function DistanceOnlyTooltip({
   active,
   label,
@@ -116,7 +91,7 @@ export default function ElevationChart() {
     }));
 
     for (let i = 0; i < chartData.length; i++) {
-      chartData[i].displayGradient = smoothPositiveGradient(chartData, i);
+      chartData[i].displayGradient = p.gradient;
     }
 
     const totalDist = routePoints[routePoints.length - 1].distance || 1;
@@ -126,16 +101,20 @@ export default function ElevationChart() {
     for (let i = 0; i < chartData.length - 1; i++) {
       const current = chartData[i];
       const next = chartData[i + 1];
-      const segmentGradient = Math.max(
-        current.displayGradient,
-        next.displayGradient,
-      );
+      const segmentGradient = (current.displayGradient + next.displayGradient) / 2;
       const color = getGradientColor(segmentGradient);
       const startDistance = current.distance;
       const endDistance = next.distance;
 
       const last = segments[segments.length - 1];
+      const minSegment = 60; // meters
+
       if (last && last.color === color) {
+        last.endDistance = endDistance;
+      } else if (
+        last &&
+        endDistance - last.startDistance < minSegment
+      ) {
         last.endDistance = endDistance;
       } else {
         segments.push({ startDistance, endDistance, color });
