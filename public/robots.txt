@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kos0616.github.io/VeloCue/sitemap.xml
+Sitemap: https://velocue.pages.dev/sitemap.xml

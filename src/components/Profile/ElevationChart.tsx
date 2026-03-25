@@ -22,7 +22,15 @@ function getGradientColor(gradient: number) {
   return "#16a34a"; // Green
 }
 
-function smoothGradient(points: { gradient: number }[], index: number, radius = 2) {
+function smoothPositiveGradient(
+  points: { gradient: number }[],
+  index: number,
+  radius = 2,
+) {
+  if (points[index].gradient <= 0) {
+    return 0;
+  }
+
   const start = Math.max(0, index - radius);
   const end = Math.min(points.length - 1, index + radius);
 
@@ -30,8 +38,10 @@ function smoothGradient(points: { gradient: number }[], index: number, radius = 
   let count = 0;
 
   for (let i = start; i <= end; i++) {
-    sum += points[i].gradient;
-    count += 1;
+    if (points[i].gradient > 0) {
+      sum += points[i].gradient;
+      count += 1;
+    }
   }
 
   return count > 0 ? sum / count : points[index].gradient;
@@ -102,17 +112,25 @@ export default function ElevationChart() {
       distance: p.distance,
       elevation: Number(p.elevation.toFixed(0)),
       gradient: p.gradient,
+      displayGradient: 0,
     }));
+
+    for (let i = 0; i < chartData.length; i++) {
+      chartData[i].displayGradient = smoothPositiveGradient(chartData, i);
+    }
 
     const totalDist = routePoints[routePoints.length - 1].distance || 1;
     type Segment = { startDistance: number; endDistance: number; color: string };
     const segments: Segment[] = [];
 
-    for (let i = 0; i < chartData.length; i++) {
+    for (let i = 0; i < chartData.length - 1; i++) {
       const current = chartData[i];
-      const next = chartData[i + 1] ?? current;
-      const smoothed = smoothGradient(chartData, i);
-      const color = getGradientColor(smoothed);
+      const next = chartData[i + 1];
+      const segmentGradient = Math.max(
+        current.displayGradient,
+        next.displayGradient,
+      );
+      const color = getGradientColor(segmentGradient);
       const startDistance = current.distance;
       const endDistance = next.distance;
 
@@ -124,16 +142,9 @@ export default function ElevationChart() {
       }
     }
 
-    const stops = segments.flatMap((segment, index) => {
+    const stops = segments.flatMap((segment) => {
       const startOffset = (segment.startDistance / totalDist) * 100;
       const endOffset = (segment.endDistance / totalDist) * 100;
-
-      if (index === 0) {
-        return [
-          { offset: `${startOffset}%`, color: segment.color },
-          { offset: `${endOffset}%`, color: segment.color },
-        ];
-      }
 
       return [
         { offset: `${startOffset}%`, color: segment.color },

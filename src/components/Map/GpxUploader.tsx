@@ -1,6 +1,7 @@
 import { ChangeEvent } from "react";
 import { useRouteStore } from "@/store/routeStore";
-// @ts-ignore
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
 import toGeoJSON from "togeojson";
 import testMapRaw from "@/assets/testmap.gpx?raw";
 
